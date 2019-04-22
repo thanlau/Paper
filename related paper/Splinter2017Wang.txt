@@ -1,0 +1,50 @@
+Problem
+Splinter is aims to hide user’s sensitive parameters of the query in the WHERE and HAVING clauses. 
+In this setting, a client is trusted and query an unencrypted database hold by 2 or more untrusted servers. 
+For example, in the query: SELECT price WHERE source = a AND dest = b. 
+A client wants to hide ‘a’ and ‘b’, as well as the result of the query. 
+
+Threat Model
+This is one client, multiple servers models. 
+It requires at least one of the servers that won’t collude with other servers 
+so that the sensitive parameter won’t be leaked. servers are honest but curious,
+which means servers will follow the rule of the query and output the correct answer.
+There is no malicious setting, which means the Splinter does not protect against severs return wrong answers 
+
+Comparing with other approaches
+A similar approach is a system based on PIR, which requires XOR whole database (ITPIR) or 
+homomorphic encryption and decryption operations (CPIR). 
+For example, if there are more than 1 sensitive parameters in SQL, then we should imply many rounds of ITPIR. 
+While FSS only requires fewer rounds of interaction.
+
+FSS using in Splinter
+Point Functions: f(x) = 1 if x = a, otherwise 0
+Interval Functions: f(x) = 1 if a <= x <= b, otherwise 0
+
+How to use FSS
+FSS contains two algorithm Genkey() and Eval(). 
+Genkey(security parameter, function description): output (key_1, …, key_p), where p is the number of parties.
+Eval(party index i, key of party i which is p_i,  input string): output f_share(input string)
+
+Detail of FSS algorithm
+Consider a two party setting, after running Genkey(), it generate two keys k_0, k_1, and each key defines a binary tree, 
+where the leaves are labelled by inputs string x_1, x_2,…,x_n ( n is the number of bits in the input domain). 
+The path from root to the leaf labelled by the input. 
+Each node is labeled by a pseudo-random string with length \lambda + 1, 
+where 1 bit control bit and \lambda bits seed. 
+The Eval() compute labels of all nodes of the path from root to the leaf, 
+which labeled by input x_i and output the control bit of the target bit. 
+Except the node in the path from root to the target leaf, where the labels should be different,  
+other nodes not in the path should has the same labels.
+
+
+Example of using FSS in Query
+The below examples assume a client uses 2 servers which keeps the same copy of the database
+SELECT COUNT(*) FROM items WHERE ItemId = 1
+Client defines a function with f(1) = 1 otherwise 0 and 
+divided into two functions f_1(x), f_2(x) which f(x) = f_1(x) + f_2(x) and sends f_1(x) and 
+f_2(x) to sever1 and server 2. Server 1 compute f_1(itemId) and return the sum of f_1(itemId) to client. 
+So does server 2. A client simply sum the result to get the final output.
+
+ 
+
